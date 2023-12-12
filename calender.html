@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+        th:first-child, td:first-child {
+            width: 10%;
+        }
+        th, td {
+            width: 10%;
+        }
+        .task-day {
+            background-color: gray;
+        }
+        .empty-day {
+		    background-color: black;
+		    color: white;
+		    opacity:0.1;
+		}
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 12px 20px;
+            box-sizing: border-box;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            background-color: #f8f8f8;
+            font-size: 16px;
+            resize: none;
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .sunday {
+		    color: red;
+		}
+
+		.saturday {
+		    color: blue;
+		}
+
+    </style>
+</head>
+
+<body>
+    <button onclick="exportTasks()">タスクをエクスポート</button>
+    <textarea id="exportOutput"></textarea>
+    <br/>
+    <br/>
+    <button onclick="importTasks()">タスクをインポート</button>
+    <textarea id="importInput"></textarea>
+    <br/>
+    <br/>
+    <button onclick="resetAllTasks()">全てのタスクをリセット</button>
+    <br/>
+    <br/>
+</body>
+
+<script>
+
+// 日の配列を定義
+const days = ['日', '月', '火', '水', '木', '金', '土'];
+
+// カレンダーを作成する関数
+function createCalendar(year, month) {
+    // ローカルストレージから特定の月のタスクを取得
+    let tasks = JSON.parse(localStorage.getItem(`tasks${year}${month}`)) || {};
+
+    // カレンダーのHTMLを作成
+    const calendarDiv = document.getElementById(`${year}${month}`);
+    calendarDiv.innerHTML = `<h2>${year}/${month}</h2><table id="table${year}${month}"></table><button onclick="resetTasks('${year}', '${month}')">リセット</button><h2>タスクリスト:</h2><ul id="task-list${year}${month}"></ul>`;
+
+	// テーブルのヘッダー行を作成
+	const table = document.querySelector(`#table${year}${month}`);
+	const headerRow = document.createElement('tr');
+	for (let i = 0; i < 7; i++) {
+	    const dayCell = document.createElement('th');
+	    dayCell.textContent = days[i];
+	    if (i === 0) {
+	        dayCell.classList.add('sunday');
+	    } else if (i === 6) {
+	        dayCell.classList.add('saturday');
+	    }
+	    headerRow.appendChild(dayCell);
+	}
+	table.appendChild(headerRow);
+
+    // 特定の月の日数を取得
+    const date = new Date(year, month, 0);
+    const daysInMonth = date.getDate();
+
+    // その月の1日の曜日を取得
+    const firstDay = new Date(year, month - 1, 1).getDay();
+
+	// 各日のセルを作成
+	let row = document.createElement('tr');
+	table.appendChild(row);
+	for (let i = 0; i < firstDay; i++) {
+	    const emptyCell = document.createElement('td');
+	    emptyCell.classList.add('empty-day');
+	    emptyCell.textContent = '-';
+	    row.appendChild(emptyCell);
+	}
+	for (let day = 1; day <= daysInMonth; day++) {
+	    if ((day + firstDay) % 7 === 1 && day !== 1) {
+	        row = document.createElement('tr');
+	        table.appendChild(row);
+	    }
+	    const dayId = `day${year}${month}${day}`;
+	    const dayCell = document.createElement('td');
+	    dayCell.id = dayId;
+	    dayCell.textContent = day;
+	    dayCell.onclick = function() {
+	        addOrRemoveTask(day, tasks, year, month);
+	    };
+	    if (tasks[dayId]) {
+	        dayCell.classList.add('task-day');
+	    }
+	    if ((day + firstDay - 1) % 7 === 0) {
+	        dayCell.classList.add('sunday');
+	    } else if ((day + firstDay - 1) % 7 === 6) {
+	        dayCell.classList.add('saturday');
+	    }
+	    row.appendChild(dayCell);
+	}
+	// 月の最後の日以降のセルを作成
+	if ((daysInMonth + firstDay) % 7 !== 0) {
+	    for (let i = (daysInMonth + firstDay) % 7; i < 7; i++) {
+	        const emptyCell = document.createElement('td');
+	        emptyCell.classList.add('empty-day');
+	        emptyCell.textContent = '-';
+	        row.appendChild(emptyCell);
+	    }
+	}
+
+    // タスクを追加または削除する関数
+    function addOrRemoveTask(day, tasks, year, month) {
+        const dayId = `day${year}${month}${day}`;
+        const dayCell = document.getElementById(dayId);
+        if (tasks[dayId]) {
+            delete tasks[dayId];
+            dayCell.classList.remove('task-day');
+        } else {
+            const task = prompt('タスクを入力してください:');
+            if (task) {
+                dayCell.classList.add('task-day');
+                tasks[dayId] = task;
+            }
+        }
+        localStorage.setItem(`tasks${year}${month}`, JSON.stringify(tasks));
+        updateTaskList(tasks, year, month);
+    }
+
+    // タスクリストを更新する関数
+	function updateTaskList(tasks, year, month) {
+	    const taskList = document.getElementById(`task-list${year}${month}`);
+	    taskList.innerHTML = '';
+	    const sortedDays = Object.keys(tasks).sort((a, b) => parseInt(a.replace(`day${year}${month}`, '')) - parseInt(b.replace(`day${year}${month}`, '')));
+	    for (const day of sortedDays) {
+	        const dayNumber = parseInt(day.replace(`day${year}${month}`, ''));
+	        const listItem = document.createElement('li');
+	        listItem.textContent = `${year}/${month}/${dayNumber}: ${tasks[day]}`;
+	        taskList.appendChild(listItem);
+	    }
+	}
+
+
+    // タスクリストを初期化
+    updateTaskList(tasks, year, month);
+}
+
+// 特定の月の全てのタスクをリセットする関数
+function resetTasks(year, month) {
+    // ローカルストレージから特定の月のタスクを取得
+    let tasks = JSON.parse(localStorage.getItem(`tasks${year}${month}`)) || {};
+
+    // 各タスクを削除
+    for (let day in tasks) {
+        delete tasks[day];
+    }
+
+    // 更新したタスクをローカルストレージに保存
+    localStorage.setItem(`tasks${year}${month}`, JSON.stringify(tasks));
+
+    // タスクリストをクリア
+    const taskList = document.getElementById(`task-list${year}${month}`);
+    taskList.innerHTML = '';
+
+    // タスク日の背景色をリセット
+    const days = document.querySelectorAll(`#table${year}${month} .task-day`);
+    days.forEach(day => {
+        day.classList.remove('task-day');
+    });
+}
+
+// ページが読み込まれたときに実行する関数
+window.onload = function() {
+    for (let year = 2023; year <= 2024; year++) {
+        for (let month = 1; month <= 12; month++) {
+            if (year === 2023 && month < 4) continue;
+            if (year === 2024 && month > 3) break;
+            const calendarDiv = document.createElement('div');
+            calendarDiv.id = `${year}${month}`;
+            document.body.appendChild(calendarDiv);
+            createCalendar(year, month);
+        }
+    }
+};
+
+// 全てのタスクをエクスポートする関数
+function exportTasks() {
+    let tasks = {};
+    for (let i = 0; i < localStorage.length; i++) {
+        let key = localStorage.key(i);
+        if (key.startsWith('tasks')) {
+            tasks[key] = JSON.parse(localStorage.getItem(key));
+        }
+    }
+    document.getElementById('exportOutput').value = JSON.stringify(tasks);
+}
+
+// タスクをインポートする関数
+function importTasks() {
+    let tasks = JSON.parse(document.getElementById('importInput').value);
+    for (let key in tasks) {
+        localStorage.setItem(key, JSON.stringify(tasks[key]));
+    }
+    location.reload();
+}
+
+function resetAllTasks() {
+    // すべてのタスクのキーを配列に保存
+    let keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        let key = localStorage.key(i);
+        if (key.startsWith('tasks')) {
+            keys.push(key);
+        }
+    }
+
+    // 各キーを削除
+    for (let key of keys) {
+        localStorage.removeItem(key);
+    }
+
+    location.reload();
+}
+
+</script>
+
+</html>
