@@ -198,10 +198,12 @@ document.getElementById('inportButton').addEventListener('click', function() {
         Object.keys(taskList).forEach(yearMonth => {
             const monthDiv = document.getElementById(`month-${yearMonth}`);
             const taskListDiv = document.createElement('div');
-            taskListDiv.innerHTML = '<h3>・タスクリスト</h3>';
+            taskListDiv.innerHTML = '<h3>タスクリスト</h3>';
             taskList[yearMonth].sort((a, b) => a.date.localeCompare(b.date)).forEach(task => {
                 const taskDiv = document.createElement('div');
-                taskDiv.textContent = `${task.date.slice(0, 4)}/${task.date.slice(4, 6)}/${task.date.slice(6, 8)}: ${task.content}`; // Format the date
+                const dateObj = new Date(task.date.slice(0, 4), task.date.slice(4, 6) - 1, task.date.slice(6, 8));
+                const dayOfWeek = days[dateObj.getDay()];
+                taskDiv.textContent = `${task.date.slice(0, 4)}/${task.date.slice(4, 6)}/${task.date.slice(6, 8)}(${dayOfWeek}): ${task.content}`; // Format the date with day of week
                 taskDiv.style.backgroundColor = task.color;
                 taskListDiv.appendChild(taskDiv);
             });
