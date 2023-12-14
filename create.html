@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>カレンダータスク生成</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background-color: #f0f0f0;
+        min-width:480px;
+        text-align: center;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+    th, td {
+        border: 1px solid #ccc;
+        padding: 5px;
+        text-align: center;
+    }
+    .sunday {
+        color: red;
+    }
+    .saturday {
+        color: blue;
+    }
+    .task-day {
+        position: relative;
+    }
+    .empty-day {
+        background-color: black;
+        color: white;
+        opacity: 0.1;
+    }
+    .task-dot {
+        position: relative;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        height: 10px;
+        width: 10px;
+        border-radius: 50%;
+    }
+    .tooltip {
+        visibility: hidden;
+        width: ;
+        background-color: #555;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px 0;
+        position: absolute;
+        z-index: 1;
+        bottom: 150%;
+        opacity: 0;
+        transition: opacity 0.3s;
+	    }
+	    .tooltip::after {
+	        content: "";
+	        position: absolute;
+	        top: 100%;
+	        border-width: 5px;
+	        border-style: solid;
+	        border-color: #555 transparent transparent transparent;
+	    }
+	    .task-day:hover .tooltip {
+	        visibility: visible;
+	        opacity: 1;
+
+	    }
+        textarea {
+            width: 80%;
+            height: 100px;
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #0078D7;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #005A9E;
+        }
+</style>
+</head>
+<body>
+<a href="https://ewew3232.github.io/28_task/tasks.html">タスク登録ページへ</a>
+<br>
+<textarea id="inportTextArea" placeholder="タスクを生成"></textarea>
+<br>
+<button id="inportButton">インポート</button>
+
+<div id="calendar"></div>
+
+<script>
+const days = ['日', '月', '火', '水', '木', '金', '土'];
+
+
+function createCalendar(year, month) {
+    const calendarDiv = document.getElementById('calendar');
+    const monthDiv = document.createElement('div');
+    monthDiv.id = `month-${year}${month.toString().padStart(2, '0')}`; // Add id attribute to the month div
+    monthDiv.innerHTML = `<h2>${year}年${month}月</h2>`;
+    const table = document.createElement('table');
+    const headerRow = document.createElement('tr');
+    days.forEach(day => {
+        const dayHeader = document.createElement('th');
+        dayHeader.textContent = day;
+        headerRow.appendChild(dayHeader);
+    });
+    table.appendChild(headerRow);
+
+    const date = new Date(year, month - 1, 1);
+    const firstDay = date.getDay();
+    let dayCount = 1;
+    let lastWeekRow;
+    for (let i = 0; i < 6; i++) {
+        const weekRow = document.createElement('tr');
+		for (let j = 0; j < 7; j++) {
+		    const dayCell = document.createElement('td');
+		    if (i === 0 && j < firstDay) {
+		        dayCell.classList.add('empty-day');
+		        dayCell.textContent = '-';
+		    } else if (dayCount <= new Date(year, month, 0).getDate()) {
+		        dayCell.textContent = dayCount;
+		        dayCell.id = `${year}${month.toString().padStart(2, '0')}${dayCount.toString().padStart(2, '0')}`; // Add id attribute
+		        if (j === 0) dayCell.classList.add('sunday');
+		        if (j === 6) dayCell.classList.add('saturday');
+		        dayCount++;
+		    } else {
+		        dayCell.classList.add('empty-day');
+		        dayCell.textContent = '-';
+		    }
+		    weekRow.appendChild(dayCell);
+		}
+        if (i > 0 && lastWeekRow) {
+            table.appendChild(lastWeekRow);
+        }
+        lastWeekRow = weekRow;
+    }
+    if (Array.from(lastWeekRow.children).some(td => td.textContent !== '-')) {
+        table.appendChild(lastWeekRow);
+    }
+    monthDiv.appendChild(table);
+    calendarDiv.appendChild(monthDiv);
+}
+
+for (let year = 2023; year <= 2024; year++) {
+    for (let month = (year === 2023 ? 4 : 1); month <= (year === 2024 ? 3 : 12); month++) {
+        createCalendar(year, month);
+    }
+}
+
+document.getElementById('inportButton').addEventListener('click', function() {
+    const tasksInput = document.getElementById('inportTextArea').value;
+    try {
+        const tasks = JSON.parse(tasksInput);
+        const taskList = {};
+        Object.keys(tasks).forEach(task => {
+            const [year, month, day, content] = task.split(':');
+            const color = tasks[task];
+            const date = `${year}${month}${day}`;
+            const taskDay = document.getElementById(date);
+            if (taskDay) {
+                taskDay.classList.add('task-day');
+                const tooltipId = `${date}-tooltip`;
+                let tooltip = document.getElementById(tooltipId);
+                if (!tooltip) {
+                    tooltip = document.createElement('div');
+                    tooltip.id = tooltipId;
+                    tooltip.classList.add('tooltip');
+                    taskDay.appendChild(tooltip);
+                }
+                const taskDot = document.createElement('div');
+                taskDot.classList.add('task-dot');
+                taskDot.style.backgroundColor = color;
+                taskDay.appendChild(taskDot);
+                const taskInfo = document.createElement('div');
+                taskInfo.textContent = content;
+                taskInfo.style.backgroundColor = color;
+                tooltip.appendChild(taskInfo);
+
+                // Add task to the task list
+                if (!taskList[`${year}${month}`]) {
+                    taskList[`${year}${month}`] = [];
+                }
+                taskList[`${year}${month}`].push({ date, content, color });
+            }
+        });
+
+        // Generate task list for each month
+        Object.keys(taskList).forEach(yearMonth => {
+            const monthDiv = document.getElementById(`month-${yearMonth}`);
+            const taskListDiv = document.createElement('div');
+            taskListDiv.innerHTML = '<h3>・タスクリスト</h3>';
+            taskList[yearMonth].sort((a, b) => a.date.localeCompare(b.date)).forEach(task => {
+                const taskDiv = document.createElement('div');
+                taskDiv.textContent = `${task.date.slice(0, 4)}/${task.date.slice(4, 6)}/${task.date.slice(6, 8)}: ${task.content}`; // Format the date
+                taskDiv.style.backgroundColor = task.color;
+                taskListDiv.appendChild(taskDiv);
+            });
+            monthDiv.appendChild(taskListDiv);
+        });
+    } catch (e) {
+        console.error('Invalid JSON input for tasks:', e);
+    }
+});
+
+</script>
+
+
+</body>
+</html>

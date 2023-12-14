@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>カレンダータスク登録</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+        }
+        #calendar {
+            display: flex;
+            flex-direction: column;
+            gap: 1em;
+            width: 80%;
+            margin-top: 20px;
+        }
+        .month {
+            display: flex;
+            flex-direction: column;
+            gap: 1em;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .monthTitle {
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        .toggleButton {
+            margin: 10px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #0078D7;
+            color: white;
+            cursor: pointer;
+        }
+        .toggleButton:hover {
+            background-color: #005A9E;
+        }
+        .day {
+            display: flex;
+            flex-direction: column;
+            padding: 1em;
+            border: 1px solid #ccc;
+            background-color: white;
+            border-radius: 5px;
+        }
+        .date {
+            flex: 1;
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+        }
+        .tasks {
+            flex: 9;
+            display: flex;
+            flex-direction: column;
+        }
+        .task {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5em;
+            padding: 0.5em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .delete, .colorSelect, .addButton {
+            cursor: pointer;
+            margin-left: 10px;
+            width: 70px;
+            height: 30px;
+            line-height: 15px;
+        }
+        .taskContent {
+            flex: 18;
+        }
+        .taskButtons {
+            flex: 2;
+            display: flex;
+            justify-content: space-between;
+        }
+        textarea {
+            width: 80%;
+            height: 100px;
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #0078D7;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #005A9E;
+        }
+        .month-label {
+		    font-weight: bold;
+		    font-size: 28px;
+		}
+		button#exportButton{
+        	margin-top:5px;
+        }
+        button#importButton{
+        	margin-top:5px;
+        }
+    </style>
+</head>
+<body>
+	<br>
+	<a href="https://ewew3232.github.io/28_task/tasks.html">カレンダー生成ページへ</a>
+    <textarea id="exportTextArea" placeholder="エクスポートされたデータがここに表示されます"></textarea>
+    <button id="exportButton">エクスポート</button>
+    <textarea id="importTextArea" placeholder="インポートするデータをここに貼り付けてください"></textarea>
+    <button id="importButton">インポート</button>
+    <div id="calendar"></div>
+
+<script>
+window.onload = function() {
+    const calendar = document.getElementById('calendar');
+    const daysOfWeek = ['日', '月', '火', '水', '木', '金', '土'];
+    const colors = ['lightblue', 'lightcoral', 'lightgreen', 'plum', 'lightsalmon', 'lightgray'];
+
+    for (let y = 2023; y <= 2024; y++) {
+        for (let m = (y === 2023 ? 4 : 1); m <= (y === 2023 ? 12 : 3); m++) {
+            const monthDiv = document.createElement('div');
+            monthDiv.className = 'month';
+
+            for (let d = 1; d <= new Date(y, m, 0).getDate(); d++) {
+                const dayKey = `${y}:` + (m < 10 ? '0' : '') + m + `:` + (d < 10 ? '0' : '') + d;
+                const div = document.createElement('div');
+                div.className = 'day';
+                div.dataset.date = dayKey;
+
+                const dateDiv = document.createElement('div');
+                dateDiv.className = 'date';
+                const dayOfWeek = daysOfWeek[new Date(y, m - 1, d).getDay()];
+                dateDiv.innerText = `${y}/` + (m < 10 ? '0' : '') + m + `/` + (d < 10 ? '0' : '') + d + ` (${dayOfWeek})`;
+                div.appendChild(dateDiv);
+
+                const tasksDiv = document.createElement('div');
+                tasksDiv.className = 'tasks';
+                div.appendChild(tasksDiv);
+
+                const addButton = document.createElement('button');
+                addButton.className = 'addButton';
+                addButton.innerText = '+';
+                addButton.addEventListener('click', function() {
+                    const taskText = window.prompt('新しいタスクを入力してください');
+                    if (taskText) {
+                        const newTaskDiv = document.createElement('div');
+                        newTaskDiv.className = 'task';
+                        newTaskDiv.style.backgroundColor = 'lightgray';
+
+                        const taskContent = document.createElement('div');
+                        taskContent.className = 'taskContent';
+                        taskContent.innerText = taskText;
+                        newTaskDiv.appendChild(taskContent);
+
+                        const taskButtons = document.createElement('div');
+                        taskButtons.className = 'taskButtons';
+
+                        const deleteButton = document.createElement('button');
+                        deleteButton.className = 'delete';
+                        deleteButton.innerText = '削除';
+                        deleteButton.addEventListener('click', function() {
+                            tasksDiv.removeChild(newTaskDiv);
+                            localStorage.removeItem(dayKey + `:${taskText}`);
+                        });
+                        taskButtons.appendChild(deleteButton);
+
+                        const colorSelect = document.createElement('select');
+                        colorSelect.className = 'colorSelect';
+                        colors.forEach(color => {
+                            const option = document.createElement('option');
+                            option.value = color;
+                            option.innerText = color;
+                            if (color === newTaskDiv.style.backgroundColor) {
+                                option.selected = true;
+                            }
+                            colorSelect.appendChild(option);
+                        });
+                        colorSelect.addEventListener('change', function() {
+                            newTaskDiv.style.backgroundColor = this.value;
+                            localStorage.setItem(dayKey + `:${taskText}`, this.value);
+                        });
+                        taskButtons.appendChild(colorSelect);
+
+                        newTaskDiv.appendChild(taskButtons);
+                        tasksDiv.appendChild(newTaskDiv);
+
+                        localStorage.setItem(dayKey + `:${taskText}`, 'lightgray');
+                    }
+                });
+                div.appendChild(addButton);
+
+                monthDiv.appendChild(div);
+            }
+
+            calendar.appendChild(monthDiv);
+        }
+    }
+    
+        const monthDivs = document.getElementsByClassName('month');
+    for (let i = 0; i < monthDivs.length; i++) {
+        const monthDiv = monthDivs[i];
+
+        const buttonDiv = document.createElement('div');
+        buttonDiv.style.display = 'flex';
+        buttonDiv.style.justifyContent = 'space-between';
+        buttonDiv.style.marginBottom = '10px';
+        monthDiv.insertBefore(buttonDiv, monthDiv.firstChild);
+
+        const monthLabel = document.createElement('div');
+        monthLabel.className = 'month-label';  // クラスを追加
+        const monthKey = monthDiv.querySelector('.day').dataset.date.slice(0, 7);
+        const monthKeyParts = monthKey.split(':');
+        monthLabel.innerText = `${monthKeyParts[0]}年${monthKeyParts[1]}月`;  // フォーマットを変更
+        buttonDiv.appendChild(monthLabel);
+
+        const toggleButton = document.createElement('button');
+        toggleButton.innerText = 'この月を折りたたむ';
+        toggleButton.addEventListener('click', function() {
+            const days = monthDiv.getElementsByClassName('day');
+            for (let j = 0; j < days.length; j++) {
+                const day = days[j];
+                if (day.style.display === 'none') {
+                    day.style.display = 'block';
+                    toggleButton.innerText = 'この月を折りたたむ';
+                } else {
+                    day.style.display = 'none';
+                    toggleButton.innerText = 'この月を展開する';
+                }
+            }
+        });
+        buttonDiv.appendChild(toggleButton);
+
+        const clearButton = document.createElement('button');
+        clearButton.innerText = 'この月のタスクをすべて消す';
+        clearButton.addEventListener('click', function() {
+            if (confirm('本当にこの月のすべてのタスクを消しますか？')) {
+                const tasks = monthDiv.getElementsByClassName('task');
+                while (tasks.length > 0) {
+                    const task = tasks[0];
+                    const taskContent = task.getElementsByClassName('taskContent')[0];
+                    const taskText = taskContent.innerText;
+                    const day = task.parentNode.parentNode;
+                    const dayKey = day.dataset.date;
+                    localStorage.removeItem(dayKey + `:${taskText}`);
+                    task.parentNode.removeChild(task);
+                }
+            }
+        });
+        buttonDiv.appendChild(clearButton);
+    }
+
+    // Load tasks from localStorage
+    for (let i = 0; i < localStorage.length; i++) {
+        const taskKey = localStorage.key(i);
+        const taskColor = localStorage.getItem(taskKey);
+
+        const taskKeyParts = taskKey.split(':');
+        const taskYear = taskKeyParts[0];
+        const taskMonth = taskKeyParts[1];
+        const taskDate = taskKeyParts[2];
+        const taskText = taskKeyParts[3];
+
+        const taskDivs = document.querySelectorAll(`.day[data-date="${taskYear}:${taskMonth}:${taskDate}"]`);
+        if (taskDivs.length > 0) {
+            const taskDiv = taskDivs[0];
+            const tasksDiv = taskDiv.getElementsByClassName('tasks')[0];
+
+            const newTaskDiv = document.createElement('div');
+            newTaskDiv.className = 'task';
+            newTaskDiv.style.backgroundColor = taskColor;
+
+            const taskContent = document.createElement('div');
+            taskContent.className = 'taskContent';
+            taskContent.innerText = taskText;
+            newTaskDiv.appendChild(taskContent);
+
+            const taskButtons = document.createElement('div');
+            taskButtons.className = 'taskButtons';
+
+            const newDeleteButton = document.createElement('button');
+            newDeleteButton.className = 'delete';
+            newDeleteButton.innerText = '削除';
+            newDeleteButton.addEventListener('click', function() {
+                tasksDiv.removeChild(newTaskDiv);
+                localStorage.removeItem(taskKey);
+            });
+            taskButtons.appendChild(newDeleteButton);
+
+            const colorSelect = document.createElement('select');
+            colorSelect.className = 'colorSelect';
+            colors.forEach(color => {
+                const option = document.createElement('option');
+                option.value = color;
+                option.innerText = color;
+                if (color === taskColor) {
+                    option.selected = true;
+                }
+                colorSelect.appendChild(option);
+            });
+            colorSelect.addEventListener('change', function() {
+                newTaskDiv.style.backgroundColor = this.value;
+                localStorage.setItem(taskKey, this.value);
+            });
+            taskButtons.appendChild(colorSelect);
+
+            newTaskDiv.appendChild(taskButtons);
+            tasksDiv.appendChild(newTaskDiv);
+        }
+    }
+    document.getElementById('exportButton').addEventListener('click', function() {
+        const exportData = {};
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            const value = localStorage.getItem(key);
+            exportData[key] = value;
+        }
+        document.getElementById('exportTextArea').value = JSON.stringify(exportData, null, 2);
+    });
+
+    document.getElementById('importButton').addEventListener('click', function() {
+        const importData = JSON.parse(document.getElementById('importTextArea').value);
+        for (const key in importData) {
+            if (importData.hasOwnProperty(key)) {
+                localStorage.setItem(key, importData[key]);
+            }
+        }
+        location.reload();
+    });
+}
+</script>
+
+</body>
+</html>
