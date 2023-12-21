@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -183,11 +184,11 @@ window.onload = function() {
                             const newTaskText = window.prompt('新しいタスクのテキストを入力してください', taskText);
                             if (newTaskText) {
                                 taskContent.innerText = newTaskText;
-                                localStorage.removeItem(taskKey);
-                                const newTaskKey = `${taskYear}:${taskMonth}:${taskDate}:${newTaskText}`;
-                                localStorage.setItem(newTaskKey, taskColor);
+                                localStorage.removeItem(dayKey + `:${taskText}`);
+                                const newTaskKey = dayKey + `:${newTaskText}`;
+                                localStorage.setItem(newTaskKey, newTaskDiv.style.backgroundColor);
                             }
-                    });
+                        });
                         taskButtons.appendChild(editButton);                        
 
                         const colorSelect = document.createElement('select');
@@ -211,14 +212,13 @@ window.onload = function() {
                         tasksDiv.appendChild(newTaskDiv);
 
                         localStorage.setItem(dayKey + `:${taskText}`, 'lightgray');
-                        
-                        
+
                         const deleteButton = document.createElement('button');
                         deleteButton.className = 'delete';
                         deleteButton.innerText = '削除';
                         deleteButton.addEventListener('click', function() {
                             tasksDiv.removeChild(newTaskDiv);
-                            localStorage.removeItem(dayKey + `:${taskText}`);
+                            localStorage.removeItem(dayKey + `:${taskContent.innerText}`);
                         });
                         taskButtons.appendChild(deleteButton);
                     }
@@ -325,8 +325,7 @@ window.onload = function() {
                 }
             });
             taskButtons.appendChild(editButton);
-            
-            
+
             const colorSelect = document.createElement('select');
             colorSelect.className = 'colorSelect';
             colors.forEach((color, index) => {
@@ -343,7 +342,7 @@ window.onload = function() {
                 localStorage.setItem(taskKey, this.value);
             });
             taskButtons.appendChild(colorSelect);
-            
+
             const newDeleteButton = document.createElement('button');
             newDeleteButton.className = 'delete';
             newDeleteButton.innerText = '削除';
@@ -352,12 +351,12 @@ window.onload = function() {
                 localStorage.removeItem(taskKey);
             });
             taskButtons.appendChild(newDeleteButton);
-            
+
             newTaskDiv.appendChild(taskButtons);
             tasksDiv.appendChild(newTaskDiv);
         }
     }
-    
+
     document.getElementById('exportButton').addEventListener('click', function() {
         const exportData = {};
         const keys = [];
@@ -383,8 +382,6 @@ window.onload = function() {
         location.reload();
     });
 }
-
-
 </script>
 
 </body>
