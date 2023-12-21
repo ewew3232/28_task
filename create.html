@@ -9,7 +9,6 @@
         padding: 20px;
         background-color: #f0f0f0;
         min-width:480px;
-        text-align: center;
     }
     table {
         width: 100%;
@@ -48,7 +47,7 @@
         visibility: hidden;
         width: ;
         background-color: #555;
-        color: #fff;
+        color:#000;
         text-align: center;
         border-radius: 6px;
         padding: 5px 0;
@@ -87,15 +86,22 @@
         button:hover {
             background-color: #005A9E;
         }
+        .input-area{
+        	text-align: center;
+        }
+        .task{
+        	border-bottom: solid 1px;
+        }
 </style>
 </head>
 <body>
-<a href="https://ewew3232.github.io/28_task/tasks.html">タスク登録ページへ</a>
-<br>
-<textarea id="inportTextArea" placeholder="タスクを生成"></textarea>
-<br>
-<button id="inportButton">インポート</button>
-
+<div class="input-area">
+	<a href="https://ewew3232.github.io/28_task/tasks.html">タスク登録ページへ</a>
+	<br>
+	<textarea id="inportTextArea" placeholder="タスクを生成"></textarea>
+	<br>
+	<button id="inportButton">インポート</button>
+</div>
 <div id="calendar"></div>
 
 <script>
@@ -198,9 +204,10 @@ document.getElementById('inportButton').addEventListener('click', function() {
         Object.keys(taskList).forEach(yearMonth => {
             const monthDiv = document.getElementById(`month-${yearMonth}`);
             const taskListDiv = document.createElement('div');
-            taskListDiv.innerHTML = '<h3>タスクリスト</h3>';
+            taskListDiv.innerHTML = '<h3>・タスクリスト</h3>';
             taskList[yearMonth].sort((a, b) => a.date.localeCompare(b.date)).forEach(task => {
                 const taskDiv = document.createElement('div');
+                taskDiv.classList.add("task");
                 const dateObj = new Date(task.date.slice(0, 4), task.date.slice(4, 6) - 1, task.date.slice(6, 8));
                 const dayOfWeek = days[dateObj.getDay()];
                 taskDiv.textContent = `${task.date.slice(0, 4)}/${task.date.slice(4, 6)}/${task.date.slice(6, 8)}(${dayOfWeek}): ${task.content}`; // Format the date with day of week
