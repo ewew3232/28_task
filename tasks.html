@@ -73,18 +73,20 @@
             border: 1px solid #ccc;
             border-radius: 5px;
         }
-        .delete, .colorSelect, .addButton {
+        .delete, .colorSelect, .addButton, .edit {
             cursor: pointer;
             margin-left: 10px;
             width: 70px;
             height: 30px;
-            line-height: 15px;
+            line-height: 11px;
+        }
+        .delete{
+        	background-color:#d52b41;
         }
         .taskContent {
             flex: 18;
         }
         .taskButtons {
-            flex: 2;
             display: flex;
             justify-content: space-between;
         }
@@ -114,6 +116,9 @@
         button#importButton{
         	margin-top:5px;
         }
+        select.colorSelect {
+		    width: 76px;
+		}
     </style>
 </head>
 <body>
@@ -130,6 +135,7 @@ window.onload = function() {
     const calendar = document.getElementById('calendar');
     const daysOfWeek = ['日', '月', '火', '水', '木', '金', '土'];
     const colors = ['lightblue', 'lightcoral', 'lightgreen', 'plum', 'lightsalmon', 'lightgray'];
+    const colorsListName = ['さや', '小野原', '坂祝家', 'ミニイベント', 'システムイベント', 'その他'];
 
     for (let y = 2023; y <= 2024; y++) {
         for (let m = (y === 2023 ? 4 : 1); m <= (y === 2023 ? 12 : 3); m++) {
@@ -169,27 +175,32 @@ window.onload = function() {
 
                         const taskButtons = document.createElement('div');
                         taskButtons.className = 'taskButtons';
-
-                        const deleteButton = document.createElement('button');
-                        deleteButton.className = 'delete';
-                        deleteButton.innerText = '削除';
-                        deleteButton.addEventListener('click', function() {
-                            tasksDiv.removeChild(newTaskDiv);
-                            localStorage.removeItem(dayKey + `:${taskText}`);
-                        });
-                        taskButtons.appendChild(deleteButton);
+                        
+						const editButton = document.createElement('button');
+						editButton.className = 'edit';
+						editButton.innerText = '編集';
+						editButton.addEventListener('click', function() {
+						    const newTaskText = window.prompt('新しいタスクのテキストを入力してください', taskText);
+						    if (newTaskText) {
+						        taskContent.innerText = newTaskText;
+						        localStorage.removeItem(taskKey);
+						        const newTaskKey = `${taskYear}:${taskMonth}:${taskDate}:${newTaskText}`;
+						        localStorage.setItem(newTaskKey, taskColor);
+						    }
+						});
+						taskButtons.appendChild(editButton);                        
 
                         const colorSelect = document.createElement('select');
-                        colorSelect.className = 'colorSelect';
-                        colors.forEach(color => {
-                            const option = document.createElement('option');
-                            option.value = color;
-                            option.innerText = color;
-                            if (color === newTaskDiv.style.backgroundColor) {
-                                option.selected = true;
-                            }
-                            colorSelect.appendChild(option);
-                        });
+						colorSelect.className = 'colorSelect';
+						colors.forEach((color, index) => {
+						    const option = document.createElement('option');
+						    option.value = color;
+						    option.innerText = colorsListName[index];
+						    if (color === newTaskDiv.style.backgroundColor) {
+						        option.selected = true;
+						    }
+						    colorSelect.appendChild(option);
+						});
                         colorSelect.addEventListener('change', function() {
                             newTaskDiv.style.backgroundColor = this.value;
                             localStorage.setItem(dayKey + `:${taskText}`, this.value);
@@ -200,7 +211,21 @@ window.onload = function() {
                         tasksDiv.appendChild(newTaskDiv);
 
                         localStorage.setItem(dayKey + `:${taskText}`, 'lightgray');
+                        
+                        
+                        const deleteButton = document.createElement('button');
+                        deleteButton.className = 'delete';
+                        deleteButton.innerText = '削除';
+                        deleteButton.addEventListener('click', function() {
+                            tasksDiv.removeChild(newTaskDiv);
+                            localStorage.removeItem(dayKey + `:${taskText}`);
+                        });
+                        taskButtons.appendChild(deleteButton);
                     }
+                    
+                    
+                    
+                    
                 });
                 div.appendChild(addButton);
 
@@ -211,7 +236,7 @@ window.onload = function() {
         }
     }
     
-        const monthDivs = document.getElementsByClassName('month');
+    const monthDivs = document.getElementsByClassName('month');
     for (let i = 0; i < monthDivs.length; i++) {
         const monthDiv = monthDivs[i];
 
@@ -267,7 +292,6 @@ window.onload = function() {
     // Load tasks from localStorage
     for (let i = 0; i < localStorage.length; i++) {
         const taskKey = localStorage.key(i);
-        const taskColor = localStorage.getItem(taskKey);
 
         const taskKeyParts = taskKey.split(':');
         const taskYear = taskKeyParts[0];
@@ -282,6 +306,7 @@ window.onload = function() {
 
             const newTaskDiv = document.createElement('div');
             newTaskDiv.className = 'task';
+            const taskColor = localStorage.getItem(taskKey);
             newTaskDiv.style.backgroundColor = taskColor;
 
             const taskContent = document.createElement('div');
@@ -291,7 +316,39 @@ window.onload = function() {
 
             const taskButtons = document.createElement('div');
             taskButtons.className = 'taskButtons';
-
+            
+			const editButton = document.createElement('button');
+			editButton.className = 'edit';
+			editButton.innerText = '編集';
+			editButton.addEventListener('click', function() {
+			    const newTaskText = window.prompt('新しいタスクのテキストを入力してください', taskText);
+			    if (newTaskText) {
+			        taskContent.innerText = newTaskText;
+			        localStorage.removeItem(taskKey);
+			        const newTaskKey = `${taskYear}:${taskMonth}:${taskDate}:${newTaskText}`;
+			        localStorage.setItem(newTaskKey, taskColor);
+			    }
+			});
+			taskButtons.appendChild(editButton);
+			
+			
+			const colorSelect = document.createElement('select');
+			colorSelect.className = 'colorSelect';
+			colors.forEach((color, index) => {
+			    const option = document.createElement('option');
+			    option.value = color;
+			    option.innerText = colorsListName[index];
+			    if (color === taskColor) {
+			        option.selected = true;
+			    }
+			    colorSelect.appendChild(option);
+			});
+            colorSelect.addEventListener('change', function() {
+                newTaskDiv.style.backgroundColor = this.value;
+                localStorage.setItem(taskKey, this.value);
+            });
+            taskButtons.appendChild(colorSelect);
+            
             const newDeleteButton = document.createElement('button');
             newDeleteButton.className = 'delete';
             newDeleteButton.innerText = '削除';
@@ -300,37 +357,26 @@ window.onload = function() {
                 localStorage.removeItem(taskKey);
             });
             taskButtons.appendChild(newDeleteButton);
-
-            const colorSelect = document.createElement('select');
-            colorSelect.className = 'colorSelect';
-            colors.forEach(color => {
-                const option = document.createElement('option');
-                option.value = color;
-                option.innerText = color;
-                if (color === taskColor) {
-                    option.selected = true;
-                }
-                colorSelect.appendChild(option);
-            });
-            colorSelect.addEventListener('change', function() {
-                newTaskDiv.style.backgroundColor = this.value;
-                localStorage.setItem(taskKey, this.value);
-            });
-            taskButtons.appendChild(colorSelect);
-
+            
             newTaskDiv.appendChild(taskButtons);
             tasksDiv.appendChild(newTaskDiv);
         }
     }
-    document.getElementById('exportButton').addEventListener('click', function() {
-        const exportData = {};
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            const value = localStorage.getItem(key);
-            exportData[key] = value;
-        }
-        document.getElementById('exportTextArea').value = JSON.stringify(exportData, null, 2);
-    });
+    
+	document.getElementById('exportButton').addEventListener('click', function() {
+	    const exportData = {};
+	    const keys = [];
+	    for (let i = 0; i < localStorage.length; i++) {
+	        keys.push(localStorage.key(i));
+	    }
+	    // キーを日付順にソート
+	    keys.sort();
+	    keys.forEach(function(key) {
+	        const value = localStorage.getItem(key);
+	        exportData[key] = value;
+	    });
+	    document.getElementById('exportTextArea').value = JSON.stringify(exportData, null, 2);
+	});
 
     document.getElementById('importButton').addEventListener('click', function() {
         const importData = JSON.parse(document.getElementById('importTextArea').value);
@@ -342,6 +388,8 @@ window.onload = function() {
         location.reload();
     });
 }
+
+
 </script>
 
 </body>
